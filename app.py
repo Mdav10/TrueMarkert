@@ -7,9 +7,12 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from werkzeug.utils import secure_filename
 import uuid
+import sys
+
+print(f"Python version: {sys.version}")
 
 app = Flask(__name__)
-app.secret_key = 'your-super-secret-key-change-this-in-production-2024'
+app.secret_key = 'your-super-secret-key-2024'
 app.config['UPLOAD_FOLDER_PRODUCTS'] = 'static/uploads/products'
 app.config['UPLOAD_FOLDER_PROFILES'] = 'static/uploads/profiles'
 app.config['UPLOAD_FOLDER_PROOFS'] = 'static/uploads/proofs'
@@ -17,21 +20,27 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-# Create directories
 for folder in [app.config['UPLOAD_FOLDER_PRODUCTS'], app.config['UPLOAD_FOLDER_PROFILES'], app.config['UPLOAD_FOLDER_PROOFS']]:
     os.makedirs(folder, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Database connection
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://mymarket_8q19_user:Hs2KnIFTlDPiz1vWfrPnLQ2dZUwhfN7B@dpg-d8i4gfmq1p3s73ebd8a0-a/mymarket_8q19')
 
 def get_db():
-    return psycopg2.connect(DATABASE_URL)
+    try:
+        return psycopg2.connect(DATABASE_URL)
+    except Exception as e:
+        print(f"Database connection error: {e}")
+        return None
 
 def init_db():
     conn = get_db()
+    if not conn:
+        print("Failed to connect to database")
+        return
+    
     c = conn.cursor()
     
     # Sellers table
@@ -85,7 +94,7 @@ def init_db():
         )
     ''')
     
-    # Subscription requests table
+    # Subscriptions table
     c.execute('''
         CREATE TABLE IF NOT EXISTS subscriptions (
             id SERIAL PRIMARY KEY,
@@ -127,24 +136,23 @@ def init_db():
     c.execute("SELECT * FROM bank_settings")
     if not c.fetchone():
         c.execute("INSERT INTO bank_settings (bank_name, account_name, account_number) VALUES (%s, %s, %s)",
-                  ('KCB Bank', 'My Market Enterprise', '1234567890'))
+                  ('KCB Bank', 'TrueMarket Enterprise', '1234567890'))
         conn.commit()
     
-    # Insert admin/owner account
-    c.execute("SELECT * FROM sellers WHERE email = 'admin@mymarket.com'")
+    # Insert admin account
+    c.execute("SELECT * FROM sellers WHERE email = 'admin@truemarket.com'")
     if not c.fetchone():
         admin_password = hashlib.sha256('Admin@2024'.encode()).hexdigest()
         c.execute('''
             INSERT INTO sellers (business_name, owner_name, email, phone, whatsapp, password, trial_start, trial_end, is_paid)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ''', ('Market Admin', 'System Admin', 'admin@mymarket.com', '0000000000', '0000000000', 
+        ''', ('TrueMarket Admin', 'System Admin', 'admin@truemarket.com', '0000000000', '0000000000', 
               admin_password, datetime.now().date(), datetime.now().date() + timedelta(days=3650), True))
         conn.commit()
     
     conn.close()
     print("Database initialized successfully!")
 
-# Decorators
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -181,16 +189,17 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# Routes - Public
 @app.route('/')
 def index():
     conn = get_db()
+    if not conn:
+        return render_template('index.html', featured=[], categories=[])
+    
     c = conn.cursor()
     today = datetime.now().date()
     
-    # Get featured products
     c.execute('''
-        SELECT p.*, s.business_name, s.profile_pic as seller_pic
+        SELECT p.*, s.business_name
         FROM products p
         JOIN sellers s ON p.seller_id = s.id
         WHERE s.is_active = TRUE AND (s.is_paid = TRUE OR s.trial_end >= %s)
@@ -198,59 +207,47 @@ def index():
     ''', (today,))
     featured = c.fetchall()
     
-    # Get categories with counts
     c.execute('''
         SELECT category, COUNT(*) as count
         FROM products p
         JOIN sellers s ON p.seller_id = s.id
         WHERE s.is_active = TRUE AND (s.is_paid = TRUE OR s.trial_end >= %s)
-        GROUP BY category
-        LIMIT 10
+        GROUP BY category LIMIT 10
     ''', (today,))
     categories = c.fetchall()
     
-    # Get top sellers
-    c.execute('''
-        SELECT s.business_name, s.profile_pic, COUNT(p.id) as product_count
-        FROM sellers s
-        LEFT JOIN products p ON s.id = p.seller_id
-        WHERE s.is_active = TRUE AND (s.is_paid = TRUE OR s.trial_end >= %s)
-        GROUP BY s.id
-        ORDER BY product_count DESC
-        LIMIT 6
-    ''', (today,))
-    top_sellers = c.fetchall()
-    
     conn.close()
-    
-    return render_template('index.html', featured=featured, categories=categories, top_sellers=top_sellers)
+    return render_template('index.html', featured=featured, categories=categories)
 
 @app.route('/products')
 def products():
-    category = request.args.get('category', '')
     search = request.args.get('search', '')
+    category = request.args.get('category', '')
     min_price = request.args.get('min_price', '')
     max_price = request.args.get('max_price', '')
     location = request.args.get('location', '')
     
     conn = get_db()
+    if not conn:
+        return render_template('products.html', products=[], categories=[], search='', category='', min_price='', max_price='', location='')
+    
     c = conn.cursor()
     today = datetime.now().date()
     
     query = '''
-        SELECT p.*, s.business_name, s.profile_pic as seller_pic
+        SELECT p.*, s.business_name
         FROM products p
         JOIN sellers s ON p.seller_id = s.id
         WHERE s.is_active = TRUE AND (s.is_paid = TRUE OR s.trial_end >= %s)
     '''
     params = [today]
     
-    if category:
-        query += " AND p.category = %s"
-        params.append(category)
     if search:
         query += " AND (p.product_name ILIKE %s OR p.description ILIKE %s)"
         params.extend([f'%{search}%', f'%{search}%'])
+    if category:
+        query += " AND p.category = %s"
+        params.append(category)
     if min_price:
         query += " AND p.price >= %s"
         params.append(float(min_price))
@@ -262,16 +259,13 @@ def products():
         params.append(f'%{location}%')
     
     query += " ORDER BY p.created_at DESC"
-    
     c.execute(query, params)
     products = c.fetchall()
     
-    # Get all categories for filter
     c.execute("SELECT DISTINCT category FROM products WHERE category IS NOT NULL")
     categories = [row[0] for row in c.fetchall()]
     
     conn.close()
-    
     return render_template('products.html', products=products, categories=categories, 
                          search=search, category=category, min_price=min_price, 
                          max_price=max_price, location=location)
@@ -279,72 +273,30 @@ def products():
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     conn = get_db()
-    c = conn.cursor()
-    today = datetime.now().date()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('index'))
     
-    # Update view count
+    c = conn.cursor()
+    
     c.execute("UPDATE products SET views = views + 1 WHERE id = %s", (product_id,))
     conn.commit()
     
-    # Get product details
     c.execute('''
-        SELECT p.*, s.business_name, s.profile_pic as seller_pic, s.phone as seller_phone,
-               s.whatsapp as seller_whatsapp, s.email as seller_email,
-               (s.is_paid = TRUE OR s.trial_end >= %s) as is_visible
+        SELECT p.*, s.business_name, s.profile_pic, s.whatsapp as seller_whatsapp
         FROM products p
         JOIN sellers s ON p.seller_id = s.id
         WHERE p.id = %s AND s.is_active = TRUE
-    ''', (today, product_id))
+    ''', (product_id,))
     product = c.fetchone()
     
     if not product:
         flash('Product not found', 'danger')
         return redirect(url_for('products'))
     
-    # Get related products
-    c.execute('''
-        SELECT p.*, s.business_name
-        FROM products p
-        JOIN sellers s ON p.seller_id = s.id
-        WHERE p.category = %s AND p.id != %s
-        AND s.is_active = TRUE AND (s.is_paid = TRUE OR s.trial_end >= %s)
-        LIMIT 4
-    ''', (product[9], product_id, today))
-    related = c.fetchall()
-    
     conn.close()
-    
-    return render_template('product_detail.html', product=product, related=related)
+    return render_template('product_detail.html', product=product)
 
-@app.route('/seller/<int:seller_id>')
-def seller_profile(seller_id):
-    conn = get_db()
-    c = conn.cursor()
-    today = datetime.now().date()
-    
-    c.execute('''
-        SELECT * FROM sellers WHERE id = %s AND is_active = TRUE
-    ''', (seller_id,))
-    seller = c.fetchone()
-    
-    if not seller:
-        flash('Seller not found', 'danger')
-        return redirect(url_for('index'))
-    
-    c.execute('''
-        SELECT p.* FROM products p
-        WHERE p.seller_id = %s
-        AND (SELECT is_active FROM sellers WHERE id = %s) = TRUE
-        AND ((SELECT is_paid FROM sellers WHERE id = %s) = TRUE OR (SELECT trial_end FROM sellers WHERE id = %s) >= %s)
-        ORDER BY p.created_at DESC
-    ''', (seller_id, seller_id, seller_id, seller_id, today))
-    products = c.fetchall()
-    
-    conn.close()
-    
-    return render_template('seller_profile.html', seller=seller, products=products)
-
-# Auth Routes
 @app.route('/register/seller', methods=['GET', 'POST'])
 def register_seller():
     if request.method == 'POST':
@@ -368,6 +320,10 @@ def register_seller():
                 profile_pic = f"/static/uploads/profiles/{filename}"
         
         conn = get_db()
+        if not conn:
+            flash('Database connection error', 'danger')
+            return redirect(url_for('register_seller'))
+        
         c = conn.cursor()
         
         try:
@@ -404,6 +360,10 @@ def register_buyer():
                 profile_pic = f"/static/uploads/profiles/{filename}"
         
         conn = get_db()
+        if not conn:
+            flash('Database connection error', 'danger')
+            return redirect(url_for('register_buyer'))
+        
         c = conn.cursor()
         
         try:
@@ -430,39 +390,35 @@ def login():
         user_type = request.form['user_type']
         
         conn = get_db()
+        if not conn:
+            flash('Database connection error', 'danger')
+            return redirect(url_for('login'))
+        
         c = conn.cursor()
         
         if user_type == 'seller':
-            c.execute("SELECT id, business_name, email, is_active, is_paid FROM sellers WHERE email = %s AND password = %s", (email, password))
+            c.execute("SELECT id, business_name, email, is_active FROM sellers WHERE email = %s AND password = %s", (email, password))
             user = c.fetchone()
-            if user:
-                if not user[3]:
-                    flash('Your account has been deactivated. Contact admin.', 'danger')
-                else:
-                    session['user_id'] = user[0]
-                    session['user_type'] = 'seller'
-                    session['user_name'] = user[1]
-                    session['user_email'] = user[2]
-                    flash(f'Welcome back, {user[1]}!', 'success')
-                    conn.close()
-                    return redirect(url_for('seller_dashboard'))
+            if user and user[3]:
+                session['user_id'] = user[0]
+                session['user_type'] = 'seller'
+                session['user_name'] = user[1]
+                flash(f'Welcome {user[1]}!', 'success')
+                conn.close()
+                return redirect(url_for('seller_dashboard'))
             else:
                 flash('Invalid email or password', 'danger')
         
         elif user_type == 'buyer':
             c.execute("SELECT id, full_name, email, is_active FROM buyers WHERE email = %s AND password = %s", (email, password))
             user = c.fetchone()
-            if user:
-                if not user[3]:
-                    flash('Your account has been deactivated. Contact admin.', 'danger')
-                else:
-                    session['user_id'] = user[0]
-                    session['user_type'] = 'buyer'
-                    session['user_name'] = user[1]
-                    session['user_email'] = user[2]
-                    flash(f'Welcome back, {user[1]}!', 'success')
-                    conn.close()
-                    return redirect(url_for('buyer_dashboard'))
+            if user and user[3]:
+                session['user_id'] = user[0]
+                session['user_type'] = 'buyer'
+                session['user_name'] = user[1]
+                flash(f'Welcome {user[1]}!', 'success')
+                conn.close()
+                return redirect(url_for('buyer_dashboard'))
             else:
                 flash('Invalid email or password', 'danger')
         
@@ -477,8 +433,12 @@ def admin_login():
         password = hashlib.sha256(request.form['password'].encode()).hexdigest()
         
         conn = get_db()
+        if not conn:
+            flash('Database connection error', 'danger')
+            return redirect(url_for('admin_login'))
+        
         c = conn.cursor()
-        c.execute("SELECT id, business_name, email FROM sellers WHERE email = %s AND password = %s AND email = 'admin@mymarket.com'", (email, password))
+        c.execute("SELECT id FROM sellers WHERE email = %s AND password = %s AND email = 'admin@truemarket.com'", (email, password))
         user = c.fetchone()
         conn.close()
         
@@ -499,37 +459,34 @@ def logout():
     flash('Logged out successfully', 'success')
     return redirect(url_for('index'))
 
-# Seller Routes
 @app.route('/seller/dashboard')
 @seller_required
 def seller_dashboard():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('index'))
+    
     c = conn.cursor()
     
-    # Get seller info
     c.execute("SELECT * FROM sellers WHERE id = %s", (session['user_id'],))
     seller = c.fetchone()
     
-    # Get products count
     c.execute("SELECT COUNT(*) FROM products WHERE seller_id = %s", (session['user_id'],))
     products_count = c.fetchone()[0]
     
-    # Get total views
-    c.execute("SELECT SUM(views) FROM products WHERE seller_id = %s", (session['user_id'],))
-    total_views = c.fetchone()[0] or 0
+    c.execute("SELECT COALESCE(SUM(views), 0) FROM products WHERE seller_id = %s", (session['user_id'],))
+    total_views = c.fetchone()[0]
     
-    # Get recent products
     c.execute("SELECT * FROM products WHERE seller_id = %s ORDER BY created_at DESC LIMIT 5", (session['user_id'],))
     recent_products = c.fetchall()
     
-    # Check subscription status
     today = datetime.now().date()
     trial_end = seller[9]
     trial_days_left = (trial_end - today).days if trial_end >= today else 0
     is_on_trial = trial_days_left > 0 and not seller[11]
     is_subscribed = seller[11]
     
-    # Check pending subscription
     c.execute("SELECT * FROM subscriptions WHERE seller_id = %s AND status = 'pending'", (session['user_id'],))
     pending_sub = c.fetchone()
     
@@ -544,6 +501,10 @@ def seller_dashboard():
 @seller_required
 def seller_products():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('seller_dashboard'))
+    
     c = conn.cursor()
     c.execute("SELECT * FROM products WHERE seller_id = %s ORDER BY created_at DESC", (session['user_id'],))
     products = c.fetchall()
@@ -571,6 +532,10 @@ def seller_add_product():
                 image_url = f"/static/uploads/products/{filename}"
         
         conn = get_db()
+        if not conn:
+            flash('Database connection error', 'danger')
+            return redirect(url_for('seller_add_product'))
+        
         c = conn.cursor()
         c.execute('''
             INSERT INTO products (seller_id, product_name, price, description, location, whatsapp, category, image_url)
@@ -588,9 +553,12 @@ def seller_add_product():
 @seller_required
 def seller_edit_product(product_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('seller_products'))
+    
     c = conn.cursor()
     
-    # Verify ownership
     c.execute("SELECT * FROM products WHERE id = %s AND seller_id = %s", (product_id, session['user_id']))
     product = c.fetchone()
     
@@ -630,6 +598,10 @@ def seller_edit_product(product_id):
 @seller_required
 def seller_delete_product(product_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('seller_products'))
+    
     c = conn.cursor()
     c.execute("DELETE FROM products WHERE id = %s AND seller_id = %s", (product_id, session['user_id']))
     conn.commit()
@@ -641,6 +613,10 @@ def seller_delete_product(product_id):
 @seller_required
 def seller_edit_profile():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('seller_dashboard'))
+    
     c = conn.cursor()
     
     if request.method == 'POST':
@@ -667,13 +643,16 @@ def seller_edit_profile():
     c.execute("SELECT * FROM sellers WHERE id = %s", (session['user_id'],))
     seller = c.fetchone()
     conn.close()
-    
     return render_template('seller_edit_profile.html', seller=seller)
 
 @app.route('/seller/subscribe', methods=['GET', 'POST'])
 @seller_required
 def seller_subscribe():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('seller_dashboard'))
+    
     c = conn.cursor()
     
     if request.method == 'POST':
@@ -700,7 +679,7 @@ def seller_subscribe():
         ''', (session['user_id'], plan_name, amount, months, filename))
         conn.commit()
         
-        flash('Subscription request sent! Admin will review and approve.', 'success')
+        flash('Subscription request sent! Admin will review.', 'success')
         return redirect(url_for('seller_dashboard'))
     
     c.execute("SELECT * FROM bank_settings LIMIT 1")
@@ -708,31 +687,31 @@ def seller_subscribe():
     conn.close()
     
     plans = [
-        {'name': 'Basic', 'months': 1, 'price': 10, 'savings': 0},
-        {'name': 'Standard', 'months': 3, 'price': 25, 'savings': 5},
-        {'name': 'Premium', 'months': 6, 'price': 45, 'savings': 15},
-        {'name': 'Enterprise', 'months': 12, 'price': 80, 'savings': 40}
+        {'name': 'Basic', 'months': 1, 'price': 10},
+        {'name': 'Standard', 'months': 3, 'price': 25},
+        {'name': 'Premium', 'months': 6, 'price': 45},
+        {'name': 'Enterprise', 'months': 12, 'price': 80}
     ]
     
     return render_template('seller_subscribe.html', bank=bank, plans=plans)
 
-# Buyer Routes
 @app.route('/buyer/dashboard')
 @buyer_required
 def buyer_dashboard():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('index'))
+    
     c = conn.cursor()
     today = datetime.now().date()
     
-    # Get buyer info
     c.execute("SELECT * FROM buyers WHERE id = %s", (session['user_id'],))
     buyer = c.fetchone()
     
-    # Get wishlist count
     c.execute("SELECT COUNT(*) FROM wishlist WHERE buyer_id = %s", (session['user_id'],))
     wishlist_count = c.fetchone()[0]
     
-    # Get recent products
     c.execute('''
         SELECT p.*, s.business_name
         FROM products p
@@ -743,13 +722,16 @@ def buyer_dashboard():
     recent_products = c.fetchall()
     
     conn.close()
-    
     return render_template('buyer_dashboard.html', buyer=buyer, wishlist_count=wishlist_count, recent_products=recent_products)
 
 @app.route('/buyer/wishlist')
 @buyer_required
 def buyer_wishlist():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('buyer_dashboard'))
+    
     c = conn.cursor()
     today = datetime.now().date()
     
@@ -770,8 +752,11 @@ def buyer_wishlist():
 @buyer_required
 def add_to_wishlist(product_id):
     conn = get_db()
-    c = conn.cursor()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(request.referrer or url_for('products'))
     
+    c = conn.cursor()
     try:
         c.execute("INSERT INTO wishlist (buyer_id, product_id) VALUES (%s, %s)", (session['user_id'], product_id))
         conn.commit()
@@ -780,13 +765,16 @@ def add_to_wishlist(product_id):
         flash('Already in wishlist', 'warning')
     finally:
         conn.close()
-    
     return redirect(request.referrer or url_for('products'))
 
 @app.route('/buyer/wishlist/remove/<int:product_id>')
 @buyer_required
 def remove_from_wishlist(product_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('buyer_wishlist'))
+    
     c = conn.cursor()
     c.execute("DELETE FROM wishlist WHERE buyer_id = %s AND product_id = %s", (session['user_id'], product_id))
     conn.commit()
@@ -798,6 +786,10 @@ def remove_from_wishlist(product_id):
 @buyer_required
 def buyer_edit_profile():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('buyer_dashboard'))
+    
     c = conn.cursor()
     
     if request.method == 'POST':
@@ -821,18 +813,19 @@ def buyer_edit_profile():
     c.execute("SELECT * FROM buyers WHERE id = %s", (session['user_id'],))
     buyer = c.fetchone()
     conn.close()
-    
     return render_template('buyer_edit_profile.html', buyer=buyer)
 
-# Admin Routes
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_login'))
+    
     c = conn.cursor()
     
-    # Stats
-    c.execute("SELECT COUNT(*) FROM sellers WHERE email != 'admin@mymarket.com'")
+    c.execute("SELECT COUNT(*) FROM sellers WHERE email != 'admin@truemarket.com'")
     total_sellers = c.fetchone()[0]
     
     c.execute("SELECT COUNT(*) FROM buyers")
@@ -844,11 +837,9 @@ def admin_dashboard():
     c.execute("SELECT COUNT(*) FROM subscriptions WHERE status = 'pending'")
     pending_subs = c.fetchone()[0]
     
-    # Recent sellers
-    c.execute("SELECT * FROM sellers WHERE email != 'admin@mymarket.com' ORDER BY created_at DESC LIMIT 10")
+    c.execute("SELECT * FROM sellers WHERE email != 'admin@truemarket.com' ORDER BY created_at DESC LIMIT 10")
     recent_sellers = c.fetchall()
     
-    # Recent subscriptions
     c.execute('''
         SELECT s.*, se.business_name 
         FROM subscriptions s
@@ -858,23 +849,23 @@ def admin_dashboard():
     ''')
     pending_subscriptions = c.fetchall()
     
-    stats = {
-        'total_sellers': total_sellers,
-        'total_buyers': total_buyers,
-        'total_products': total_products,
-        'pending_subs': pending_subs
-    }
+    stats = {'total_sellers': total_sellers, 'total_buyers': total_buyers, 
+             'total_products': total_products, 'pending_subs': pending_subs}
     
     conn.close()
-    
-    return render_template('admin_dashboard.html', stats=stats, recent_sellers=recent_sellers, pending_subscriptions=pending_subscriptions)
+    return render_template('admin_dashboard.html', stats=stats, recent_sellers=recent_sellers, 
+                         pending_subscriptions=pending_subscriptions)
 
 @app.route('/admin/sellers')
 @admin_required
 def admin_sellers():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
     c = conn.cursor()
-    c.execute("SELECT * FROM sellers WHERE email != 'admin@mymarket.com' ORDER BY created_at DESC")
+    c.execute("SELECT * FROM sellers WHERE email != 'admin@truemarket.com' ORDER BY created_at DESC")
     sellers = c.fetchall()
     conn.close()
     return render_template('admin_sellers.html', sellers=sellers)
@@ -883,6 +874,10 @@ def admin_sellers():
 @admin_required
 def admin_buyers():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
     c = conn.cursor()
     c.execute("SELECT * FROM buyers ORDER BY created_at DESC")
     buyers = c.fetchall()
@@ -893,6 +888,10 @@ def admin_buyers():
 @admin_required
 def admin_products():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
     c = conn.cursor()
     c.execute('''
         SELECT p.*, s.business_name 
@@ -908,6 +907,10 @@ def admin_products():
 @admin_required
 def admin_toggle_seller(seller_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_sellers'))
+    
     c = conn.cursor()
     c.execute("UPDATE sellers SET is_active = NOT is_active WHERE id = %s", (seller_id,))
     conn.commit()
@@ -919,6 +922,10 @@ def admin_toggle_seller(seller_id):
 @admin_required
 def admin_delete_seller(seller_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_sellers'))
+    
     c = conn.cursor()
     c.execute("DELETE FROM sellers WHERE id = %s", (seller_id,))
     conn.commit()
@@ -930,6 +937,10 @@ def admin_delete_seller(seller_id):
 @admin_required
 def admin_toggle_buyer(buyer_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_buyers'))
+    
     c = conn.cursor()
     c.execute("UPDATE buyers SET is_active = NOT is_active WHERE id = %s", (buyer_id,))
     conn.commit()
@@ -941,6 +952,10 @@ def admin_toggle_buyer(buyer_id):
 @admin_required
 def admin_delete_buyer(buyer_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_buyers'))
+    
     c = conn.cursor()
     c.execute("DELETE FROM buyers WHERE id = %s", (buyer_id,))
     conn.commit()
@@ -952,6 +967,10 @@ def admin_delete_buyer(buyer_id):
 @admin_required
 def admin_delete_product(product_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_products'))
+    
     c = conn.cursor()
     c.execute("DELETE FROM products WHERE id = %s", (product_id,))
     conn.commit()
@@ -963,19 +982,20 @@ def admin_delete_product(product_id):
 @admin_required
 def admin_approve_subscription(sub_id):
     conn = get_db()
-    c = conn.cursor()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_dashboard'))
     
+    c = conn.cursor()
     c.execute("SELECT seller_id, months FROM subscriptions WHERE id = %s", (sub_id,))
     sub = c.fetchone()
-    
     if sub:
         seller_id, months = sub
         subscription_end = datetime.now().date() + timedelta(days=30 * months)
         c.execute("UPDATE sellers SET is_paid = TRUE, subscription_end = %s WHERE id = %s", (subscription_end, seller_id))
         c.execute("UPDATE subscriptions SET status = 'approved' WHERE id = %s", (sub_id,))
         conn.commit()
-        flash('Subscription approved! Seller can now sell.', 'success')
-    
+        flash('Subscription approved!', 'success')
     conn.close()
     return redirect(url_for('admin_dashboard'))
 
@@ -983,6 +1003,10 @@ def admin_approve_subscription(sub_id):
 @admin_required
 def admin_reject_subscription(sub_id):
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
     c = conn.cursor()
     c.execute("UPDATE subscriptions SET status = 'rejected' WHERE id = %s", (sub_id,))
     conn.commit()
@@ -994,13 +1018,16 @@ def admin_reject_subscription(sub_id):
 @admin_required
 def admin_bank_settings():
     conn = get_db()
+    if not conn:
+        flash('Database connection error', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
     c = conn.cursor()
     
     if request.method == 'POST':
         bank_name = request.form['bank_name']
         account_name = request.form['account_name']
         account_number = request.form['account_number']
-        
         c.execute("UPDATE bank_settings SET bank_name=%s, account_name=%s, account_number=%s, updated_at=CURRENT_TIMESTAMP", 
                   (bank_name, account_name, account_number))
         conn.commit()
@@ -1010,7 +1037,6 @@ def admin_bank_settings():
     c.execute("SELECT * FROM bank_settings LIMIT 1")
     bank = c.fetchone()
     conn.close()
-    
     return render_template('admin_bank_settings.html', bank=bank)
 
 if __name__ == '__main__':
