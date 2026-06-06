@@ -1,17 +1,11 @@
 services:
   - type: web
     name: truemarket
-    runtime: python
+    runtime: image
     repo: https://github.com/Mdav10/TrueMarket
     plan: free
     branch: main
-    buildCommand: |
-      pip install --upgrade pip
-      pip install wheel
-      pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    dockerCommand: gunicorn app:app --bind 0.0.0.0:10000
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: DATABASE_URL
         value: postgresql://mymarket_8q19_user:Hs2KnIFTlDPiz1vWfrPnLQ2dZUwhfN7B@dpg-d8i4gfmq1p3s73ebd8a0-a/mymarket_8q19
