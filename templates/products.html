@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+{% block title %}Browse Products - My Market{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3">
+            <div class="sidebar-card">
+                <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Products</h5>
+                <form method="GET" action="/products">
+                    <div class="filter-group">
+                        <label class="filter-label">Search Products</label>
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Location</label>
+                        <input type="text" name="location" class="form-control" placeholder="City or region" value="{{ location }}">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">Price Range</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" name="min_price" class="form-control" placeholder="Min" value="{{ min_price }}">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="max_price" class="form-control" placeholder="Max" value="{{ max_price }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-gradient w-100 mb-2">Apply Filters</button>
+                    <a href="/products" class="btn btn-outline-secondary w-100">Clear All</a>
+                </form>
+            </div>
+            
+            <div class="sidebar-card">
+                <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Why Shop With Us?</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Verified Sellers</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Secure Payments</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Fast Delivery</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>24/7 Support</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Products Grid -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold">{{ products|length }} Products Found</h4>
+                    {% if search %}<p class="text-muted">Search results for: "{{ search }}"</p>{% endif %}
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-sort me-1"></i>Sort by
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Newest First</a></li>
+                        <li><a class="dropdown-item" href="#">Price: Low to High</a></li>
+                        <li><a class="dropdown-item" href="#">Price: High to Low</a></li>
+                        <li><a class="dropdown-item" href="#">Most Popular</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 col-6">
+                    <div class="product-card" onclick="window.location.href='/product/{{ product[0] }}'">
+                        {% if product[7] %}
+                            <img src="{{ product[7] }}" class="product-image" alt="{{ product[2] }}" style="height: 180px;">
+                        {% else %}
+                            <div class="product-image bg-secondary d-flex align-items-center justify-content-center" style="height: 180px;">
+                                <i class="fas fa-image fa-3x text-white"></i>
+                            </div>
+                        {% endif %}
+                        <div class="p-3">
+                            <h6 class="product-title">{{ product[2][:35] }}{% if product[2]|length > 35 %}...{% endif %}</h6>
+                            <div class="product-price">${{ "%.2f"|format(product[3]) }}</div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ product[5][:15] }}</small>
+                                <small class="text-muted"><i class="fas fa-store me-1"></i>{{ product[12][:10] }}</small>
+                            </div>
+                            <div class="mt-2">
+                                <a href="/product/{{ product[0] }}" class="btn btn-sm btn-primary w-100">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center py-5">
+                        <i class="fas fa-search fa-3x mb-3 d-block"></i>
+                        <h5>No products found</h5>
+                        <p>Try adjusting your search or filter criteria</p>
+                        <a href="/products" class="btn btn-gradient">Clear Filters</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if products|length > 0 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a></li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a></li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

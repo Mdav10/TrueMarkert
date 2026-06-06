@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Bank Settings - Admin{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-university me-2"></i>Bank Account Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Bank Name</label>
+                            <input type="text" name="bank_name" class="form-control" value="{{ bank[1] if bank else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Account Name</label>
+                            <input type="text" name="account_name" class="form-control" value="{{ bank[2] if bank else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Account Number</label>
+                            <input type="text" name="account_number" class="form-control" value="{{ bank[3] if bank else '' }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100">Save Bank Details</button>
+                    </form>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        These bank details will be shown to sellers when they subscribe.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

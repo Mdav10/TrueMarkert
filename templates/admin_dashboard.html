@@ -1,0 +1,129 @@
+{% extends "layout.html" %}
+{% block title %}Admin Dashboard - My Market{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow-sm">
+                <a href="/admin/dashboard" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="/admin/sellers" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i>Sellers
+                </a>
+                <a href="/admin/buyers" class="list-group-item list-group-item-action">
+                    <i class="fas fa-users me-2"></i>Buyers
+                </a>
+                <a href="/admin/products" class="list-group-item list-group-item-action">
+                    <i class="fas fa-box me-2"></i>Products
+                </a>
+                <a href="/admin/bank/settings" class="list-group-item list-group-item-action">
+                    <i class="fas fa-university me-2"></i>Bank Settings
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- Stats Row -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left-color: #667eea;">
+                        <i class="fas fa-store fa-2x text-primary mb-2"></i>
+                        <div class="stat-value">{{ stats.total_sellers }}</div>
+                        <div>Total Sellers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left-color: #28a745;">
+                        <i class="fas fa-users fa-2x text-success mb-2"></i>
+                        <div class="stat-value">{{ stats.total_buyers }}</div>
+                        <div>Total Buyers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left-color: #ffc107;">
+                        <i class="fas fa-box fa-2x text-warning mb-2"></i>
+                        <div class="stat-value">{{ stats.total_products }}</div>
+                        <div>Total Products</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left-color: #dc3545;">
+                        <i class="fas fa-clock fa-2x text-danger mb-2"></i>
+                        <div class="stat-value">{{ stats.pending_subs }}</div>
+                        <div>Pending Subs</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Subscriptions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Pending Subscription Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_subscriptions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr><th>Seller</th><th>Plan</th><th>Amount</th><th>Proof</th><th>Actions</th>
+                                </thead>
+                                <tbody>
+                                    {% for sub in pending_subscriptions %}
+                                    <tr>
+                                        <td><strong>{{ sub[8] }}</strong><br><small class="text-muted">Seller ID: {{ sub[1] }}</small></td>
+                                        <td>{{ sub[2] }}</td><td class="fw-bold">${{ sub[3] }}</td>
+                                        <td><a href="/static/uploads/proofs/{{ sub[5] }}" target="_blank" class="btn btn-sm btn-info">View Proof</a></td>
+                                        <td>
+                                            <a href="/admin/subscription/approve/{{ sub[0] }}" class="btn btn-sm btn-success" onclick="return confirm('Approve this subscription?')">Approve</a>
+                                            <a href="/admin/subscription/reject/{{ sub[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Reject this subscription?')">Reject</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">No pending subscription requests</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Sellers -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-store me-2"></i>Recent Sellers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr><th>Business</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th>
+                            </thead>
+                            <tbody>
+                                {% for s in recent_sellers %}
+                                <tr>
+                                    <td><strong>{{ s[1] }}</strong><br><small>{{ s[2] }}</small></td>
+                                    <td>{{ s[3] }}</td><td>{{ s[4] }}</td>
+                                    <td>
+                                        {% if s[12] %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="/admin/seller/toggle/{{ s[0] }}" class="btn btn-sm btn-warning">Toggle</a>
+                                        <a href="/admin/seller/delete/{{ s[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this seller?')">Delete</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

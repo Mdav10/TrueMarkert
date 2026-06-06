@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block title %}My Products - Seller{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-box me-2"></i>My Products</h5>
+            <a href="/seller/add_product" class="btn btn-gradient btn-sm">
+                <i class="fas fa-plus-circle me-1"></i>Add New Product
+            </a>
+        </div>
+        <div class="card-body">
+            {% if products %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Product Name</th>
+                                <th>Price</th>
+                                <th>Location</th>
+                                <th>Category</th>
+                                <th>Views</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in products %}
+                            <tr>
+                                <td>
+                                    {% if p[7] %}
+                                        <img src="{{ p[7] }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                    {% else %}
+                                        <i class="fas fa-image fa-2x text-muted"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ p[2] }}</strong><br>
+                                    <small class="text-muted">{{ p[4][:50] }}...</small>
+                                </td>
+                                <td class="fw-bold text-primary">${{ "%.2f"|format(p[3]) }}</td>
+                                <td><i class="fas fa-map-marker-alt me-1"></i>{{ p[5] }}</td>
+                                <td><span class="badge bg-secondary">{{ p[9] }}</span></td>
+                                <td><i class="fas fa-eye me-1"></i>{{ p[10] }}</td>
+                                <td>
+                                    <a href="/seller/product/edit/{{ p[0] }}" class="btn btn-sm btn-warning me-1">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <a href="/seller/product/delete/{{ p[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this product permanently?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h5>No Products Yet</h5>
+                    <p>Start selling by adding your first product</p>
+                    <a href="/seller/add_product" class="btn btn-gradient">Add Product</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

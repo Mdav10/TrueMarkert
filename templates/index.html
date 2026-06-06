@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+{% block title %}My Market - Africa's Premier Marketplace{% endblock %}
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero-section text-white">
+    <div class="container text-center">
+        <h1 class="hero-title">Welcome to My Market</h1>
+        <p class="hero-subtitle">Africa's trusted marketplace connecting buyers and sellers across the continent</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/register/seller" class="btn btn-light btn-lg"><i class="fas fa-store me-2"></i>Start Selling</a>
+            <a href="/products" class="btn btn-outline-light btn-lg"><i class="fas fa-shopping-cart me-2"></i>Start Buying</a>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Categories Section -->
+    <section class="mb-5">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">Shop by Category</h2>
+            <p class="text-muted">Browse products from your favorite categories</p>
+        </div>
+        <div class="row">
+            {% for cat in categories %}
+            <div class="col-lg-2 col-md-3 col-6">
+                <a href="/products?category={{ cat[0] }}" class="text-decoration-none">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-{% if cat[0] == 'Electronics' %}mobile-alt{% elif cat[0] == 'Clothing' %}tshirt{% elif cat[0] == 'Furniture' %}couch{% elif cat[0] == 'Vehicles' %}car{% elif cat[0] == 'Real Estate' %}home{% elif cat[0] == 'Services' %}tools{% else %}box{% endif %}"></i>
+                        </div>
+                        <h6 class="mb-1">{{ cat[0] }}</h6>
+                        <small class="text-muted">{{ cat[1] }} products</small>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold">🔥 Featured Products</h2>
+                <p class="text-muted">Discover the hottest items on our marketplace</p>
+            </div>
+            <a href="/products" class="btn btn-outline-gradient">View All <i class="fas fa-arrow-right ms-2"></i></a>
+        </div>
+        <div class="row">
+            {% for product in featured %}
+            <div class="col-lg-3 col-md-4 col-6">
+                <div class="product-card" onclick="window.location.href='/product/{{ product[0] }}'">
+                    {% if product[7] %}
+                        <img src="{{ product[7] }}" class="product-image" alt="{{ product[2] }}">
+                    {% else %}
+                        <div class="product-image bg-secondary d-flex align-items-center justify-content-center">
+                            <i class="fas fa-image fa-3x text-white"></i>
+                        </div>
+                    {% endif %}
+                    <div class="p-3">
+                        <h6 class="product-title">{{ product[2][:40] }}{% if product[2]|length > 40 %}...{% endif %}</h6>
+                        <div class="product-price">${{ "%.2f"|format(product[3]) }}</div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ product[5][:20] }}</small>
+                            <small class="text-muted"><i class="fas fa-eye me-1"></i>{{ product[10] }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center py-5">
+                    <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
+                    <h5>No products yet</h5>
+                    <p>Be the first seller to list your products!</p>
+                    <a href="/register/seller" class="btn btn-gradient">Start Selling Now</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="py-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">How It Works</h2>
+            <p class="text-muted">Simple steps to start buying and selling</p>
+        </div>
+        <div class="row text-center">
+            <div class="col-md-3 mb-4">
+                <div class="category-card">
+                    <div class="category-icon"><i class="fas fa-user-plus fa-3x"></i></div>
+                    <h5>1. Register</h5>
+                    <p class="small text-muted">Create your free account as buyer or seller</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="category-card">
+                    <div class="category-icon"><i class="fas fa-box-open fa-3x"></i></div>
+                    <h5>2. List/Browse</h5>
+                    <p class="small text-muted">Sellers list products, buyers browse</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="category-card">
+                    <div class="category-icon"><i class="fab fa-whatsapp fa-3x"></i></div>
+                    <h5>3. Connect</h5>
+                    <p class="small text-muted">Contact sellers directly via WhatsApp</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="category-card">
+                    <div class="category-icon"><i class="fas fa-handshake fa-3x"></i></div>
+                    <h5>4. Transact</h5>
+                    <p class="small text-muted">Complete your transaction safely</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-4">
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <div class="stat-card" style="border-left-color: #667eea;">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <div class="stat-value">500+</div>
+                    <div>Active Sellers</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card" style="border-left-color: #28a745;">
+                    <i class="fas fa-boxes fa-2x text-success mb-2"></i>
+                    <div class="stat-value">1000+</div>
+                    <div>Products Listed</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card" style="border-left-color: #ffc107;">
+                    <i class="fas fa-shopping-cart fa-2x text-warning mb-2"></i>
+                    <div class="stat-value">2000+</div>
+                    <div>Happy Buyers</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card" style="border-left-color: #17a2b8;">
+                    <i class="fas fa-globe fa-2x text-info mb-2"></i>
+                    <div class="stat-value">10+</div>
+                    <div>Cities Served</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

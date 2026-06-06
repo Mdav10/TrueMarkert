@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block title %}Edit Profile - Seller{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-user-edit me-2 text-primary"></i>Edit Seller Profile</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="text-center mb-3">
+                            {% if seller[7] %}
+                                <img src="{{ seller[7] }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-store fa-4x text-muted"></i>
+                            {% endif %}
+                            <div class="mt-2">
+                                <input type="file" name="profile_pic" class="form-control" accept="image/*">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Business Name</label>
+                            <input type="text" name="business_name" class="form-control" value="{{ seller[1] }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Owner Name</label>
+                            <input type="text" name="owner_name" class="form-control" value="{{ seller[2] }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" class="form-control bg-light" value="{{ seller[3] }}" disabled>
+                            <small class="text-muted">Email cannot be changed</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control" value="{{ seller[4] }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">WhatsApp Number</label>
+                                <input type="tel" name="whatsapp" class="form-control" value="{{ seller[5] }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-gradient">Save Changes</button>
+                            <a href="/seller/dashboard" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

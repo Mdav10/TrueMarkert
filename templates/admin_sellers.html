@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block title %}Manage Sellers - Admin{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-store me-2"></i>All Sellers</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th><th>Business</th><th>Owner</th><th>Email</th><th>Phone</th><th>Products</th><th>Status</th><th>Paid</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sellers %}
+                        <tr>
+                            <td>{{ s[0] }}</td>
+                            <td><strong>{{ s[1] }}</strong></td>
+                            <td>{{ s[2] }}</td>
+                            <td>{{ s[3] }}</td>
+                            <td>{{ s[4] }}</td>
+                            <td>0</td>
+                            <td>{% if s[12] %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Inactive</span>{% endif %}</td>
+                            <td>{% if s[11] %}<span class="badge bg-primary">Paid</span>{% else %}<span class="badge bg-secondary">Trial</span>{% endif %}</td>
+                            <td>
+                                <a href="/admin/seller/toggle/{{ s[0] }}" class="btn btn-sm btn-warning">Toggle</a>
+                                <a href="/admin/seller/delete/{{ s[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete seller and all products?')">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

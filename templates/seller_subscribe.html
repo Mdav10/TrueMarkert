@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block title %}Subscription Plans - Seller{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2 text-primary"></i>Choose Subscription Plan</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select Plan</label>
+                            <select name="plan_name" id="plan" class="form-select form-select-lg" onchange="updatePrice()">
+                                {% for p in plans %}
+                                <option value="{{ p.name }}" data-months="{{ p.months }}" data-price="{{ p.price }}">
+                                    {{ p.name }} - ${{ p.price }} ({{ p.months }} month{% if p.months > 1 %}s{% endif %})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <input type="hidden" name="months" id="months">
+                        <input type="hidden" name="amount" id="amount">
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>How it works:</strong>
+                            <ol class="mb-0 mt-2">
+                                <li>Transfer the exact amount to the bank account below</li>
+                                <li>Take a screenshot of your transfer confirmation</li>
+                                <li>Upload the screenshot above</li>
+                                <li>Admin will approve within 24 hours</li>
+                                <li>Your products will remain visible to buyers</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Upload Payment Proof (Screenshot)</label>
+                            <input type="file" name="proof_image" class="form-control" accept="image/*" required>
+                            <small class="text-muted">JPG, PNG or GIF - Max 5MB</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-gradient w-100">Submit Payment Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-university me-2"></i>Bank Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if bank %}
+                    <div class="mb-3">
+                        <label class="text-muted">Bank Name</label>
+                        <p class="fw-bold fs-5">{{ bank[1] }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted">Account Name</label>
+                        <p class="fw-bold fs-5">{{ bank[2] }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted">Account Number</label>
+                        <p class="fw-bold fs-5">{{ bank[3] }}</p>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Bank details will be updated by admin soon.</p>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                        <p class="small text-muted">Your payment is secure and will be verified by our team</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6><i class="fas fa-gift text-warning me-2"></i>Why Subscribe?</h6>
+                    <ul class="small">
+                        <li>✓ Products visible to all buyers</li>
+                        <li>✓ Priority support</li>
+                        <li>✓ Featured listings</li>
+                        <li>✓ Analytics dashboard</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updatePrice() {
+    let select = document.getElementById('plan');
+    let selected = select.options[select.selectedIndex];
+    document.getElementById('months').value = selected.getAttribute('data-months');
+    document.getElementById('amount').value = selected.getAttribute('data-price');
+}
+updatePrice();
+</script>
+{% endblock %}

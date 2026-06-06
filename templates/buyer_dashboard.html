@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+{% block title %}Buyer Dashboard - My Market{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow-sm">
+                <a href="/buyer/dashboard" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="/buyer/wishlist" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart me-2"></i>My Wishlist
+                    {% if wishlist_count > 0 %}<span class="badge bg-danger rounded-pill ms-2">{{ wishlist_count }}</span>{% endif %}
+                </a>
+                <a href="/buyer/profile/edit" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-edit me-2"></i>Edit Profile
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="alert alert-info">
+                <i class="fas fa-user-circle me-2"></i>
+                Welcome back, <strong>{{ session.user_name }}</strong>!
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card" style="border-left-color: #667eea;">
+                        <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+                        <div class="stat-value">{{ wishlist_count }}</div>
+                        <div>Items in Wishlist</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card" style="border-left-color: #28a745;">
+                        <i class="fas fa-shopping-cart fa-2x text-success mb-2"></i>
+                        <div class="stat-value">{{ recent_products|length }}</div>
+                        <div>New Products</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card" style="border-left-color: #ffc107;">
+                        <i class="fas fa-store fa-2x text-warning mb-2"></i>
+                        <div class="stat-value">10+</div>
+                        <div>Sellers Near You</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recently Added Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for p in recent_products %}
+                        <div class="col-md-4 mb-3">
+                            <div class="product-card" onclick="window.location.href='/product/{{ p[0] }}'">
+                                {% if p[7] %}
+                                    <img src="{{ p[7] }}" class="product-image" style="height: 150px;">
+                                {% else %}
+                                    <div class="product-image bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
+                                        <i class="fas fa-image fa-2x text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="p-2">
+                                    <h6 class="product-title small">{{ p[2][:30] }}</h6>
+                                    <div class="product-price">${{ "%.2f"|format(p[3]) }}</div>
+                                    <small class="text-muted"><i class="fas fa-store me-1"></i>{{ p[12][:15] }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12 text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <p>No products available yet.</p>
+                            <a href="/products" class="btn btn-gradient">Browse Products</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

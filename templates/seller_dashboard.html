@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+{% block title %}Seller Dashboard - My Market{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow-sm">
+                <a href="/seller/dashboard" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview
+                </a>
+                <a href="/seller/products" class="list-group-item list-group-item-action">
+                    <i class="fas fa-box me-2"></i>My Products
+                </a>
+                <a href="/seller/add_product" class="list-group-item list-group-item-action">
+                    <i class="fas fa-plus-circle me-2"></i>Add Product
+                </a>
+                <a href="/seller/subscribe" class="list-group-item list-group-item-action">
+                    <i class="fas fa-credit-card me-2"></i>Subscription
+                </a>
+                <a href="/seller/profile/edit" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-edit me-2"></i>Edit Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <!-- Status Alerts -->
+            {% if is_on_trial %}
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="fas fa-gift me-2"></i>
+                    <strong>🎉 Free Trial Active!</strong> You have {{ trial_days_left }} days remaining.
+                    Your products are <strong>visible to buyers</strong> during trial.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% elif pending_sub %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Subscription Pending!</strong> Admin is reviewing your payment request.
+                    Your products are currently hidden from buyers.
+                </div>
+            {% elif not is_subscribed %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Trial Ended!</strong> Your free trial has expired.
+                    <a href="/seller/subscribe" class="alert-link">Subscribe now</a> to continue selling.
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Subscription Active!</strong> Your products are visible to buyers.
+                </div>
+            {% endif %}
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card" style="border-left-color: #667eea;">
+                        <i class="fas fa-box-open fa-2x text-primary mb-2"></i>
+                        <div class="stat-value">{{ products_count }}</div>
+                        <div>Total Products</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card" style="border-left-color: #28a745;">
+                        <i class="fas fa-eye fa-2x text-success mb-2"></i>
+                        <div class="stat-value">{{ total_views }}</div>
+                        <div>Total Views</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card" style="border-left-color: #ffc107;">
+                        <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
+                        <div class="stat-value">
+                            {% if is_subscribed %}
+                                <span class="text-success">Active</span>
+                            {% elif is_on_trial %}
+                                <span class="text-warning">Trial</span>
+                            {% else %}
+                                <span class="text-danger">Expired</span>
+                            {% endif %}
+                        </div>
+                        <div>Account Status</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Products -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Products</h5>
+                    <a href="/seller/products" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_products %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Product</th>
+                                        <th>Price</th>
+                                        <th>Views</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in recent_products %}
+                                    <tr>
+                                        <td>
+                                            {% if p[7] %}
+                                                <img src="{{ p[7] }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                                            {% else %}
+                                                <i class="fas fa-image fa-2x text-muted"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ p[2][:30] }}</td>
+                                        <td class="fw-bold">${{ "%.2f"|format(p[3]) }}</td>
+                                        <td>{{ p[10] }}</td>
+                                        <td><small>{{ p[11].strftime('%Y-%m-%d') if p[11] else 'N/A' }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <p>No products yet.</p>
+                            <a href="/seller/add_product" class="btn btn-gradient">Add Your First Product</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Tips -->
+            <div class="card shadow-sm mt-4 bg-light">
+                <div class="card-body">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Quick Tips for Success</h6>
+                    <ul class="small mb-0">
+                        <li>Add high-quality product images to attract more buyers</li>
+                        <li>Write detailed descriptions with clear pricing</li>
+                        <li>Respond quickly to WhatsApp inquiries</li>
+                        <li>Keep your inventory updated regularly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

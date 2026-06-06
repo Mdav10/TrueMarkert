@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Manage Buyers - Admin{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>All Buyers</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for b in buyers %}
+                        <tr>
+                            <td>{{ b[0] }}</td>
+                            <td><strong>{{ b[1] }}</strong></td>
+                            <td>{{ b[2] }}</td>
+                            <td>{{ b[3] or 'N/A' }}</td>
+                            <td><small>{{ b[7].strftime('%Y-%m-%d') if b[7] else 'N/A' }}</small></td>
+                            <td>{% if b[6] %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Inactive</span>{% endif %}</td>
+                            <td>
+                                <a href="/admin/buyer/toggle/{{ b[0] }}" class="btn btn-sm btn-warning">Toggle</a>
+                                <a href="/admin/buyer/delete/{{ b[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this buyer?')">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+{% block title %}{{ product[2] }} - My Market{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/products">Products</a></li>
+            <li class="breadcrumb-item active">{{ product[2][:30] }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    {% if product[7] %}
+                        <img src="{{ product[7] }}" class="img-fluid rounded" style="max-height: 400px; width: 100%; object-fit: contain;">
+                    {% else %}
+                        <div class="bg-secondary text-white py-5 rounded">
+                            <i class="fas fa-image fa-5x mb-3"></i>
+                            <p>No Image Available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Info -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <span class="badge bg-primary mb-2">{{ product[9] }}</span>
+                    <h2 class="fw-bold">{{ product[2] }}</h2>
+                    <div class="product-price display-6">${{ "%.2f"|format(product[3]) }}</div>
+                    
+                    <div class="mt-3">
+                        <span class="badge bg-secondary"><i class="fas fa-eye me-1"></i> {{ product[10] }} views</span>
+                        <span class="badge bg-info ms-2"><i class="fas fa-calendar me-1"></i> Listed: {{ product[11].strftime('%b %d, %Y') if product[11] else 'Recently' }}</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6><i class="fas fa-align-left me-2"></i>Description</h6>
+                    <p class="text-muted">{{ product[4] }}</p>
+                    
+                    <hr>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                            <strong>Location:</strong><br>
+                            <span class="text-muted">{{ product[5] }}</span>
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-store text-primary me-2"></i>
+                            <strong>Seller:</strong><br>
+                            <a href="/seller/{{ product[1] }}" class="text-decoration-none">{{ product[12] }}</a>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <i class="fab fa-whatsapp me-2"></i>
+                        <strong>Contact via WhatsApp:</strong>
+                        <a href="https://wa.me/{{ product[6] }}" target="_blank" class="text-success fw-bold d-block mt-1">
+                            {{ product[6] }} <i class="fas fa-external-link-alt fa-xs"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="https://wa.me/{{ product[6] }}" target="_blank" class="btn btn-success btn-lg">
+                            <i class="fab fa-whatsapp me-2"></i> Contact Seller on WhatsApp
+                        </a>
+                        {% if session.user_type == 'buyer' %}
+                            <a href="/buyer/wishlist/add/{{ product[0] }}" class="btn btn-outline-danger">
+                                <i class="fas fa-heart me-2"></i> Add to Wishlist
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Products -->
+    {% if related %}
+    <div class="mt-5">
+        <h4 class="mb-4">You May Also Like</h4>
+        <div class="row">
+            {% for p in related %}
+            <div class="col-md-3 col-6">
+                <div class="product-card" onclick="window.location.href='/product/{{ p[0] }}'">
+                    {% if p[7] %}
+                        <img src="{{ p[7] }}" class="product-image" style="height: 150px;">
+                    {% else %}
+                        <div class="product-image bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
+                            <i class="fas fa-image fa-2x text-white"></i>
+                        </div>
+                    {% endif %}
+                    <div class="p-2">
+                        <h6 class="product-title small">{{ p[2][:30] }}</h6>
+                        <div class="product-price">${{ "%.2f"|format(p[3]) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block title %}Login - My Market{% endblock %}
+{% block content %}
+<div class="container mt-5" style="min-height: 60vh;">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white text-center border-0">
+                    <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Welcome Back</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Login As</label>
+                            <select name="user_type" class="form-select" required>
+                                <option value="buyer">Buyer</option>
+                                <option value="seller">Seller</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-gradient w-100 py-2">Login</button>
+                    </form>
+                    <hr class="my-4">
+                    <div class="text-center">
+                        <p class="mb-2">Don't have an account?</p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="/register/seller" class="btn btn-outline-success btn-sm">Register as Seller</a>
+                            <a href="/register/buyer" class="btn btn-outline-info btn-sm">Register as Buyer</a>
+                        </div>
+                        <hr class="my-3">
+                        <a href="/admin/login" class="text-muted small"><i class="fas fa-user-shield"></i> Admin Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

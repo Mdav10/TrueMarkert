@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block title %}Add Product - Seller{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-plus-circle me-2 text-primary"></i>Add New Product</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Product Name <span class="text-danger">*</span></label>
+                            <input type="text" name="product_name" class="form-control" placeholder="e.g., iPhone 14 Pro Max" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Price (USD) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" name="price" class="form-control" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Category</label>
+                                <select name="category" class="form-select">
+                                    <option>Electronics</option>
+                                    <option>Clothing</option>
+                                    <option>Furniture</option>
+                                    <option>Vehicles</option>
+                                    <option>Real Estate</option>
+                                    <option>Services</option>
+                                    <option>Food</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Product Image</label>
+                            <input type="file" name="product_image" class="form-control" accept="image/*" onchange="previewImage(this)">
+                            <small class="text-muted">Recommended: JPG or PNG, max 5MB</small>
+                            <div id="imagePreview" class="mt-2"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                            <textarea name="description" rows="5" class="form-control" placeholder="Describe your product in detail..." required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Location <span class="text-danger">*</span></label>
+                                <input type="text" name="location" class="form-control" placeholder="City, Country" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">WhatsApp Number <span class="text-danger">*</span></label>
+                                <input type="tel" name="whatsapp" class="form-control" placeholder="e.g., 257XXXXXXXX" required>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/seller/products" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-gradient">Add Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagePreview').innerHTML = '<img src="'+e.target.result+'" style="height: 150px; border-radius: 8px;">';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
